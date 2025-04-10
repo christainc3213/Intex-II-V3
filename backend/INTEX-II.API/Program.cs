@@ -58,7 +58,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins("http://localhost:5173", "https://gray-desert-04c503d1e.6.azurestaticapps.net")
                 .AllowCredentials()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
