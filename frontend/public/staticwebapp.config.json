@@ -6,7 +6,7 @@
       "statusCode": 200
     },
     {
-      "route": "/browse/*",
+      "route": "/browse*",
       "serve": "/index.html",
       "statusCode": 200
     },
