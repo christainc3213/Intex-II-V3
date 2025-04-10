@@ -1,19 +1,9 @@
 {
-  "routes": [
-    {
-      "route": "/browse",
-      "serve": "/index.html",
-      "statusCode": 200
-    },
-    {
-      "route": "/browse*",
-      "serve": "/index.html",
-      "statusCode": 200
-    },
-    {
-      "route": "/*",
-      "serve": "/index.html",
-      "statusCode": 200
-    }
-  ]
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",          
+      "/*.auth/*"        
+    ]
+  }
 }
