@@ -3,13 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import HeaderComponent from "../components/HeaderComponent";
 
 function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-  const location = useLocation();
+  // State variables for form inputs and error handling
+  const [email, setEmail] = useState(""); // Email input
+  const [password, setPassword] = useState(""); // Password input
+  const [confirmPassword, setConfirmPassword] = useState(""); // Confirm password input
+  const [error, setError] = useState(""); // Error message
+  const navigate = useNavigate(); // Navigation hook
+  const location = useLocation(); // Location hook to access query parameters
 
+  // Prefill email if provided in the query parameters
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const prefillEmail = params.get("email");
@@ -18,10 +20,12 @@ function Register() {
     }
   }, [location.search]);
 
+  // Navigate to the login page
   const handleLoginClick = () => {
     navigate("/login");
   };
 
+  // Handle input changes for email, password, and confirm password
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === "email") setEmail(value);
@@ -29,6 +33,7 @@ function Register() {
     if (name === "confirmPassword") setConfirmPassword(value);
   };
 
+  // Safely parse JSON from a response, handling empty responses
   const safeJson = async (response: Response) => {
     const length = response.headers.get("content-length");
     if (length && parseInt(length) > 0) {
@@ -37,26 +42,30 @@ function Register() {
     return null;
   };
 
+  // Handle form submission for registration
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
+    e.preventDefault(); // Prevent default form submission behavior
+    setError(""); // Clear any previous error messages
 
+    // Validate form inputs
     if (!email || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
 
+    // Validate email format
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address.");
       return;
     }
 
+    // Check if passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
-    // Enforce new password requirements (12+ characters, at least 1 uppercase, 1 number)
+    // Enforce password requirements (12+ characters, at least 1 uppercase, 1 number)
     if (!/^(?=.*[A-Z])(?=.*\d).{12,}$/.test(password)) {
       setError(
         "Password must be at least 12 characters long, include at least 1 uppercase letter and 1 number."
@@ -65,40 +74,49 @@ function Register() {
     }
 
     try {
-      const registerResponse = await fetch("https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
+      // Send registration request to the backend
+      const registerResponse = await fetch(
+        "https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Include cookies in the request
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const registerResult = await safeJson(registerResponse);
 
+      // Handle registration errors
       if (!registerResponse.ok) {
         throw new Error(registerResult?.message || "Error registering.");
       }
 
-      const loginUrl = "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useCookies=true";
+      // Automatically log in the user after successful registration
+      const loginUrl =
+        "https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/login?useCookies=true";
       const loginResponse = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        credentials: "include", // Include cookies in the request
         body: JSON.stringify({ email, password }),
       });
 
       const loginResult = await safeJson(loginResponse);
 
+      // Handle login errors
       if (!loginResponse.ok) {
         throw new Error(
           loginResult?.message || "Login failed after registration."
         );
       }
 
-      navigate("/browse");
+      // Navigate to the home page after successful login
+      navigate("/");
     } catch (error: any) {
       console.error("Error in registration flow:", error);
       setError(error.message || "Something went wrong.");
@@ -106,11 +124,12 @@ function Register() {
   };
 
   return (
-    <HeaderComponent backgroundSrc="/bigback.png" >
+    <HeaderComponent>
       <LoginHeroContent>
         <h1>Create Account</h1>
         <h2>Join CineNiche today</h2>
 
+        {/* Registration form */}
         <FormWrapper onSubmit={handleSubmit}>
           <StyledInput
             type="email"
@@ -134,6 +153,7 @@ function Register() {
             onChange={handleChange}
           />
 
+          {/* Display error message if any */}
           {error && <ErrorText>{error}</ErrorText>}
 
           <OptFormButton type="submit">
@@ -141,6 +161,7 @@ function Register() {
             <img src="/icons/chevron-right.png" alt="Register" />
           </OptFormButton>
 
+          {/* Link to login page */}
           <RegisterText>
             Already have an account?{" "}
             <span onClick={handleLoginClick}>Log in</span>
@@ -154,6 +175,7 @@ export default Register;
 
 import styled from "styled-components";
 
+// Styled components for styling the registration page
 const LoginHeroContent = styled.div`
   max-width: 400px;
   margin: 0 auto;
@@ -230,7 +252,7 @@ const OptFormButton = styled.button`
   position: relative;
   overflow: hidden;
   width: fit-content;
-  height: 45px;
+  height: 60px;
   background: #000;
   color: white;
   padding: 0 32px;
@@ -243,7 +265,7 @@ const OptFormButton = styled.button`
   img {
     margin-left: 10px;
     filter: brightness(0) invert(1);
-    width: 14px;
+    width: 24px;
     transition: filter 0.4s ease;
     position: relative;
     z-index: 3;

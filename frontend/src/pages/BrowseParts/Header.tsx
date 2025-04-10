@@ -1,19 +1,18 @@
-import styled from "styled-components";
-import { FiSearch, FiUser } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
-import { MovieType } from "../../types/MovieType";
-import React, { useState, useEffect, useRef } from "react";
-import Logout from "../../components/Logout";
-import AdminButton from "../../components/AdminButton";
+import styled from "styled-components"; // Importing styled-components for styling.
+import { FiSearch, FiUser } from "react-icons/fi"; // Importing icons for search and user.
+import { useNavigate } from "react-router-dom"; // Importing useNavigate for programmatic navigation.
+import { MovieType } from "../../types/MovieType"; // Importing the MovieType interface for type safety.
+import React, { useState, useEffect, useRef } from "react"; // Importing React and hooks for state, effects, and refs.
+import Logout from "../../components/Logout"; // Importing the Logout component for user logout functionality.
+import AdminButton from "../../components/AdminButton"; // Importing the AdminButton component for admin access.
 
 export interface HeaderProps {
-    selectedGenre: string;
-    setSelectedGenre: (genre: string) => void;
-    genres: string[];
-    formatGenreName: (genre: string) => string;
-    allMovies: MovieType[];
+    selectedGenre: string; // The currently selected genre.
+    setSelectedGenre: (genre: string) => void; // Function to update the selected genre.
+    genres: string[]; // List of available genres.
+    formatGenreName: (genre: string) => string; // Function to format genre names for display.
+    allMovies: MovieType[]; // List of all movies.
 }
-
 
 const Header = ({
                     selectedGenre,
@@ -22,30 +21,30 @@ const Header = ({
                     formatGenreName,
                     allMovies,
                 }: HeaderProps) => {
-    const navigate = useNavigate();
-    const [searchOpen, setSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [userMenuOpen, setUserMenuOpen] = useState(false);
-    const [userRole, setUserRole] = useState<string | null>(null);
-    
+    const navigate = useNavigate(); // Hook for navigation.
+    const [searchOpen, setSearchOpen] = useState(false); // State to track whether the search input is open.
+    const [searchQuery, setSearchQuery] = useState(""); // State to store the search query.
+    const [userMenuOpen, setUserMenuOpen] = useState(false); // State to track whether the user menu is open.
+    const [userRole, setUserRole] = useState<string | null>(null); // State to store the user's role.
 
-    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false); // State to track whether the genre dropdown is open.
 
-    const openDropdown   = () => setDropdownOpen(true);
-    const closeDropdown  = () => setDropdownOpen(false);
-    const toggleDropdown = () => setDropdownOpen(o => !o);
+    const openDropdown = () => setDropdownOpen(true); // Function to open the genre dropdown.
+    const closeDropdown = () => setDropdownOpen(false); // Function to close the genre dropdown.
+    const toggleDropdown = () => setDropdownOpen((o) => !o); // Function to toggle the genre dropdown.
 
     const handleGenreSelect = (genre: string) => {
-        setDropdownOpen(false);
-        window.location.href = `/browse?genre=${genre}`;
+        setDropdownOpen(false); // Close the dropdown.
+        window.location.href = `/browse?genre=${genre}`; // Navigate to the selected genre.
     };
-    
-    const userMenuRef = useRef<HTMLDivElement>(null);
-    const userMenuWrapperRef = useRef<HTMLDivElement>(null);
+
+    const userMenuRef = useRef<HTMLDivElement>(null); // Ref for the user menu dropdown.
+    const userMenuWrapperRef = useRef<HTMLDivElement>(null); // Ref for the user menu wrapper.
 
     useEffect(() => {
         const fetchUserInfo = async () => {
             try {
+                // Fetch user information from the API.
                 const response = await fetch("https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/user/info", {
                     method: "GET",
                     credentials: "include",
@@ -57,10 +56,11 @@ const Header = ({
                 if (response.ok) {
                     const data = await response.json();
 
+                    // Check if the user has the "Administrator" role.
                     if (data.roles?.includes("Administrator")) {
                         setUserRole("Administrator");
                     } else {
-                        setUserRole("User"); // Optional fallback
+                        setUserRole("User"); // Optional fallback role.
                     }
                 } else {
                     console.error("Failed to fetch user info");
@@ -70,56 +70,59 @@ const Header = ({
             }
         };
 
-        fetchUserInfo();
+        fetchUserInfo(); // Call the function to fetch user information.
 
+        // Function to handle clicks outside the user menu.
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 userMenuWrapperRef.current &&
                 !userMenuWrapperRef.current.contains(event.target as Node)
             ) {
-                setUserMenuOpen(false);
+                setUserMenuOpen(false); // Close the user menu if the click is outside.
             }
         };
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutside); // Add event listener for clicks outside.
+        return () => document.removeEventListener("mousedown", handleClickOutside); // Cleanup the event listener on unmount.
     }, []);
 
     const handleGenreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const genre = e.target.value;
-        navigate(`/browse?genre=${genre}`);
+        const genre = e.target.value; // Get the selected genre.
+        navigate(`/browse?genre=${genre}`); // Navigate to the selected genre.
     };
 
     const handleHomeClick = () => {
-        window.location.href = "/browse";
+        window.location.href = "/browse"; // Navigate to the home page.
     };
 
     const handleMoviesClick = () => {
-        window.location.href = "/browse?type=Movies";
+        window.location.href = "/browse?type=Movies"; // Navigate to the Movies page.
     };
 
     const handleTVClick = () => {
-        window.location.href = "/browse?type=TV-Shows";
+        window.location.href = "/browse?type=TV-Shows"; // Navigate to the TV Shows page.
     };
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
-            navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
-            setSearchQuery("");
-            setSearchOpen(false);
+            navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`); // Navigate to the search results page.
+            setSearchQuery(""); // Clear the search query.
+            setSearchOpen(false); // Close the search input.
         }
     };
-    
 
     const isGenreSelected = () => {
-        return selectedGenre !== "all" && !window.location.search.includes("type=");
+        return selectedGenre !== "all" && !window.location.search.includes("type="); // Check if a specific genre is selected.
     };
 
     return (
         <StyledHeader>
+            {/* Logo section */}
             <LogoWrapper>
                 <Logo src="/whitelogo.png" alt="CineNiche" onClick={handleHomeClick} />
             </LogoWrapper>
+
+            {/* Navigation menu */}
             <NavMenu>
                 <NavItem
                     $active={location.pathname === "/browse" && !location.search.includes("type=") && selectedGenre === "all"}
@@ -142,28 +145,26 @@ const Header = ({
                     TV Shows
                 </NavItem>
 
-                <GenreDropdownWrapper onMouseEnter={openDropdown}
-                                      onMouseLeave={closeDropdown}>
+                {/* Genre dropdown */}
+                <GenreDropdownWrapper onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
                     <GenreDisplay $active={isGenreSelected()} onClick={() => setDropdownOpen((prev) => !prev)}>
                         {selectedGenre === "all" ? "All Genres" : formatGenreName(selectedGenre)}
                         <Underline $active={isGenreSelected()} />
                     </GenreDisplay>
 
-                    
-                        <DropdownMenu $open={dropdownOpen}>
-                            <GenreGrid>
-                                {genres.map((genre) => (
-                                    <DropdownItem key={genre} onClick={() => handleGenreSelect(genre)}>
-                                        {formatGenreName(genre)}
-                                    </DropdownItem>
-                                ))}
-                            </GenreGrid>
-                        </DropdownMenu>
-                    
+                    <DropdownMenu $open={dropdownOpen}>
+                        <GenreGrid>
+                            {genres.map((genre) => (
+                                <DropdownItem key={genre} onClick={() => handleGenreSelect(genre)}>
+                                    {formatGenreName(genre)}
+                                </DropdownItem>
+                            ))}
+                        </GenreGrid>
+                    </DropdownMenu>
                 </GenreDropdownWrapper>
-
             </NavMenu>
 
+            {/* User menu and search input */}
             <IconWrapper>
                 {searchOpen && (
                     <SearchInput
@@ -175,15 +176,14 @@ const Header = ({
                         onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                         autoFocus
                     />
-
                 )}
                 <StyledIcon as={FiSearch} onClick={() => setSearchOpen(!searchOpen)} />
                 <StyledIcon as={FiUser} onClick={() => setUserMenuOpen(!userMenuOpen)} />
 
                 {userMenuOpen && (
                     <UserDropdown ref={userMenuRef}>
-                        <Logout>Logout</Logout>
-                        {userRole === "Administrator" && <AdminButton>Admin</AdminButton>}
+                        <Logout>Logout</Logout> {/* Logout option */}
+                        {userRole === "Administrator" && <AdminButton>Admin</AdminButton>} {/* Admin button if the user is an admin */}
                     </UserDropdown>
                 )}
             </IconWrapper>
@@ -191,61 +191,59 @@ const Header = ({
     );
 };
 
-export default Header;
+export default Header; // Exporting the Header component as the default export.
 
 // Styled Components
 
 const StyledHeader = styled.header`
-  position: fixed;
+  position: fixed; // Fix the header at the top of the page.
   top: 0;
   left: 0;
   right: 0;
-  height: 70px;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent);
+  height: 70px; // Height of the header.
+  z-index: 100; // Set the stacking order.
+  display: flex; // Use flexbox for layout.
+  align-items: center; // Center-align items vertically.
+  justify-content: space-between; // Space out items horizontally.
+  padding: 0 24px; // Horizontal padding.
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent); // Gradient background.
 `;
 
 const Logo = styled.img`
-  height: 60px;
-  object-fit: contain;
-  cursor: pointer;
+  height: 60px; // Height of the logo.
+  object-fit: contain; // Maintain aspect ratio of the logo.
+  cursor: pointer; // Change cursor to pointer on hover.
 `;
 
 const NavMenu = styled.nav`
-  display: flex;
-  align-items: center;
-  gap: 24px;
+  display: flex; // Use flexbox for layout.
+  align-items: center; // Center-align items vertically.
+  gap: 24px; // Add spacing between navigation items.
 `;
 
 const NavItem = styled.div<{ $active?: boolean }>`
-    position: relative;
-    color: white;
-    font-size: 1.125rem;
-    font-weight: 600;
-    cursor: pointer;
-    padding-bottom: 4px;
+  position: relative; // Position relative for child elements.
+  color: white; // Text color.
+  font-size: 1.125rem; // Font size of the navigation item.
+  font-weight: 600; // Font weight of the navigation item.
+  cursor: pointer; // Change cursor to pointer on hover.
+  padding-bottom: 4px; // Padding below the text.
 
-    &::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: ${({ $active }) => ($active ? "100%" : "0")};
-        height: 2px;
-        background-color: white;
-        transition: width 0.3s ease;
-    }
+  &::after {
+    content: ""; // Add a decorative underline.
+    position: absolute; // Position the underline absolutely.
+    bottom: 0; // Position at the bottom of the text.
+    left: 0; // Align to the left.
+    width: ${({ $active }) => ($active ? "100%" : "0")}; // Adjust width based on active state.
+    height: 2px; // Height of the underline.
+    background-color: white; // Color of the underline.
+    transition: width 0.3s ease; // Smooth transition for width changes.
+  }
 
-    &:hover::after {
-        width: 100%;
-    }
+  &:hover::after {
+    width: 100%; // Expand the underline on hover.
+  }
 `;
-
-
 
 const IconWrapper = styled.div`
     display: flex;
@@ -260,7 +258,6 @@ const IconWrapper = styled.div`
         flex-shrink: 0;
     }
 `;
-
 
 const LogoWrapper = styled.div`
   width: 340px;
@@ -327,7 +324,6 @@ const UserDropdown = styled.div`
   }
 `;
 
-
 const GenreDropdownWrapper = styled.div`
   position: relative;
   display: inline-block;
@@ -370,8 +366,6 @@ top:100%;
    z-index:999;overflow:hidden;
  `;
 
-
-
 const DropdownItem = styled.div`
     padding: 0.5rem;
     font-size: 1rem;
@@ -385,7 +379,6 @@ const DropdownItem = styled.div`
         background: #222;
     }
 `;
-
 
 const GenreGrid = styled.div`
     display: grid;
