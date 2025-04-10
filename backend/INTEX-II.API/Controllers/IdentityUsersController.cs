@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
 [Route("[controller]")]
-// [Authorize(Roles = "Administrator")]
-public class UserController : ControllerBase
+[Authorize(Roles = "Administrator")]
+// public class UserController : ControllerBase
 {
     private readonly UserManager<IdentityUser> _userManager;
 
