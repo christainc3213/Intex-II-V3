@@ -6,6 +6,7 @@ import EditMovieForm from '../components/EditMovieForm';
 import styled from 'styled-components';
 import Pagination from '../components/Pagination';
 import AdminHeader from './AdminHeader';
+import AdminAuthorizeView from '../components/AdminAuthorizeView';
 
 const AdminPage = () => {
     const [movies, setMovies] = useState<MovieType[]>([]);
@@ -89,6 +90,7 @@ const AdminPage = () => {
     }
 
     return (
+    <AdminAuthorizeView>
         <AdminContainer>
             <AdminHeader
                 allMovies={movies}
@@ -188,6 +190,7 @@ const AdminPage = () => {
                 />
             </div>
         </AdminContainer>
+    </AdminAuthorizeView>
     );
 };
 
