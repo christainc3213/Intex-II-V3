@@ -13,41 +13,47 @@ namespace INTEX_II.API.Controllers
     {
         private readonly MainDbContext _mainDbContext;
 
+        // Constructor to initialize the database context
         public MainDbController(MainDbContext mainDbContext)
         {
             _mainDbContext = mainDbContext;
         }
 
-
+        // GET endpoint to retrieve a paginated list of movies with optional search functionality
         [HttpGet]
         public IActionResult Get(int pageSize = 5, int pageNumber = 1, string? search = null)
         {
-        var query = _mainDbContext.MovieTitles.AsQueryable();
+            // Query the MovieTitles table
+            var query = _mainDbContext.MovieTitles.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            query = query.Where(m => m.title.ToLower().Contains(search));
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(m => m.title.ToLower().Contains(search));
+            }
+
+            // Calculate total movies and total pages
+            var totalMovies = query.Count();
+            var totalPages = (int)Math.Ceiling((double)totalMovies / pageSize);
+
+            // Retrieve the paginated list of movies
+            var movieList = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Create an object to return the movies, total count, and total pages
+            var movieObject = new
+            {
+                Movies = movieList,
+                TotalNumMovies = totalMovies,
+                TotalPages = totalPages
+            };
+
+            return Ok(movieObject);
         }
 
-        var totalMovies = query.Count();
-        var totalPages = (int)Math.Ceiling((double)totalMovies / pageSize);
-
-        var movieList = query
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        var movieObject = new
-        {
-            Movies = movieList,
-            TotalNumMovies = totalMovies,
-            TotalPages = totalPages
-        };
-
-        return Ok(movieObject);
-        }
-
-
+        // POST endpoint to add a new movie to the database
         [HttpPost("AddMovie")]
         public IActionResult AddMovie([FromBody] MovieTitle newMovie)
         {
@@ -57,7 +63,7 @@ namespace INTEX_II.API.Controllers
             }
 
             // Generate the new show_id for the movie
-            newMovie.show_id = GetNextShowId();  // Call the method to generate the next show_id
+            newMovie.show_id = GetNextShowId();
 
             // Add the new movie to the database
             _mainDbContext.MovieTitles.Add(newMovie);
@@ -68,16 +74,16 @@ namespace INTEX_II.API.Controllers
             return Ok(newMovie);
         }
 
-        // Method to get the next show_id
+        // Private method to generate the next show_id for a new movie
         private string GetNextShowId()
-        {   
+        {
             // Query all show_ids from the database
             var lastShowId = _mainDbContext.MovieTitles
-                                        .Select(m => m.show_id)
-                                        .ToList()
-                                        .Select(id => long.TryParse(id.Substring(1), out var num) ? num : 0) // Extract numeric part
-                                        .OrderByDescending(num => num) // Sort numerically
-                                        .FirstOrDefault(); // Get the highest number
+                .Select(m => m.show_id)
+                .ToList()
+                .Select(id => long.TryParse(id.Substring(1), out var num) ? num : 0) // Extract numeric part
+                .OrderByDescending(num => num) // Sort numerically
+                .FirstOrDefault(); // Get the highest number
 
             // If no movie exists, start with "s1"
             if (lastShowId == 0)
@@ -89,16 +95,18 @@ namespace INTEX_II.API.Controllers
             return "s" + (lastShowId + 1);
         }
 
+        // PUT endpoint to update an existing movie by its show_id
         [HttpPut("UpdateMovie/{show_id}")]
         public IActionResult UpdateMovie(string show_id, [FromBody] MovieTitle updatedMovie)
         {
+            // Find the existing movie by its show_id
             var existingMovie = _mainDbContext.MovieTitles.Find(show_id);
             if (existingMovie == null)
             {
                 return NotFound("Movie not found");
             }
 
-            // Update properties
+            // Update the movie's properties
             existingMovie.type = updatedMovie.type;
             existingMovie.title = updatedMovie.title;
             existingMovie.director = updatedMovie.director;
@@ -143,21 +151,25 @@ namespace INTEX_II.API.Controllers
             existingMovie.talk_show_comedy_tv = updatedMovie.talk_show_comedy_tv;
             existingMovie.Thrillers = updatedMovie.Thrillers;
 
+            // Update the movie in the database
             _mainDbContext.MovieTitles.Update(existingMovie);
             _mainDbContext.SaveChanges();
 
             return Ok(existingMovie);
         }
 
+        // DELETE endpoint to delete a movie by its show_id
         [HttpDelete("DeleteMovie/{show_id}")]
         public IActionResult DeleteMovie(string show_id)
         {
+            // Find the movie to delete by its show_id
             var movieToDelete = _mainDbContext.MovieTitles.Find(show_id);
             if (movieToDelete == null)
             {
                 return NotFound("Movie not found");
             }
 
+            // Remove the movie from the database
             _mainDbContext.MovieTitles.Remove(movieToDelete);
             _mainDbContext.SaveChanges();
 

@@ -1,401 +1,260 @@
-import { useEffect, useLayoutEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import styled from "styled-components";
-import Spinner from "../components/Spinner";
-import Header from "../pages/BrowseParts/Header";
-import {MovieType} from "../types/MovieType"; // adjust path if needed
+import { useState } from "react"; // Importing useState hook for managing component state.
+import { useNavigate } from "react-router-dom"; // Importing useNavigate for programmatic navigation.
+import HeaderComponent from "../components/HeaderComponent"; // Importing the HeaderComponent for the page header.
 
+function LoginPage() {
+  // State variables for email, password, and "remember me" checkbox.
+  const [email, setEmail] = useState<string>(""); // State to store the user's email input.
+  const [password, setPassword] = useState<string>(""); // State to store the user's password input.
+  const [rememberme, setRememberme] = useState<boolean>(false); // State to track the "remember me" checkbox.
 
-interface Movie {
-  show_id: string;
-  title: string;
-  description: string;
-  rating: string;
-  release_year: number;
-  director: string;
-  cast: string;
-  country: string;
-  duration: string;
-  genre: string;
-  slug: string;
-}
+  // State variable for error messages.
+  const [error, setError] = useState<string>(""); // State to store error messages.
+  const navigate = useNavigate(); // Hook for programmatic navigation.
 
-const MoviePage = () => {
-  const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
-
-  useLayoutEffect(() => {
-    if ("scrollRestoration" in history) {
-      history.scrollRestoration = "manual";
-    }
-
-    // Scroll now
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-
-    // Scroll again after paint (some browsers only listen then)
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      }, 1); // tiny delay helps override browser restoration
-    });
-
-    return () => {
-      if ("scrollRestoration" in history) {
-        history.scrollRestoration = "auto";
-      }
-    };
-  }, []);
-
-
-  const [movie, setMovie] = useState<Movie | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userRating, setUserRating] = useState<number | null>(null);
-  const [hoverRating, setHoverRating] = useState<number | null>(null);
-
-
-  // Separate states for each rec source
-  const [contentRecs, setContentRecs] = useState<string[]>([]);
-  const [collabRecs, setCollabRecs] = useState<string[]>([]);
-  const [actionRecs, setActionRecs] = useState<string[]>([]);
-  const [comedyRecs, setComedyRecs] = useState<string[]>([]);
-  const [dramaRecs, setDramaRecs] = useState<string[]>([]);
-
-  const [results, setResults] = useState<MovieType[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState("all");
-  const [genres, setGenres] = useState<string[]>([]);
-
-  const formatGenreName = (key: string): string =>
-      key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()).replace(/\bTv\b/i, "TV");
-
-  const handleStarClick = async (rating: number) => {
-    if (!movie) return;
-  
-    const userId = 11;
-    if (!userId) {
-      alert("You must be logged in to rate movies.");
-      return;
-    }
-  
-    setUserRating(rating);
-  
-    try {
-      const res = await fetch("https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/ratings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          show_id: movie.show_id,
-          rating: rating,
-        }),
-      });
-  
-      if (!res.ok) {
-        console.error("Failed to submit rating");
-      }
-    } catch (err) {
-      console.error("Rating submit error:", err);
+  // Handle change events for input fields.
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, type, checked, value } = e.target; // Destructure event target properties.
+    if (type === "checkbox") {
+      setRememberme(checked); // Update "remember me" state for checkbox.
+    } else if (name === "email") {
+      setEmail(value); // Update email state.
+    } else if (name === "password") {
+      setPassword(value); // Update password state.
     }
   };
-  
-  const renderStars = () => {
-    const stars = [];
-  
-    for (let i = 1; i <= 5; i++) {
-      const filled = hoverRating ? i <= hoverRating : i <= (userRating ?? 0);
-  
-      stars.push(
-        <Star
-          key={i}
-          onClick={() => handleStarClick(i)}
-          onMouseEnter={() => setHoverRating(i)}
-          onMouseLeave={() => setHoverRating(null)}
-          $filled={filled}
-        >
-          ★
-        </Star>
-      );
+
+  // Handle click event for the "Register" link.
+  const handleRegisterClick = () => {
+    navigate("/register"); // Navigate to the registration page.
+  };
+
+  // Handle submit event for the login form.
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // Prevent default form submission behavior.
+    setError(""); // Clear any previous error messages.
+
+    // Validate that both email and password fields are filled.
+    if (!email || !password) {
+      setError("Please fill in all fields."); // Set error message if fields are empty.
+      return;
     }
-  
-    return <StarsContainer>{stars}</StarsContainer>;
-  };    
 
-  const slugify = (str: string) =>
-    str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    // Determine the login URL based on the "remember me" checkbox state.
+    const loginUrl = rememberme
+      ? "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useCookies=true"
+      : "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useSessionCookies=true";
 
-  const getPosterPath = (title: string): string => {
-    if (!title) return "/Movie Posters/fallback.jpg";
-    return `/Movie Posters/${title
-      .replace(/[^\w\s]/g, "")
-      .replace(/\s+/g, " ")
-      .trim()}.jpg`;
-  }; 
+    try {
+      // Send a POST request to the login endpoint.
+      const response = await fetch(loginUrl, {
+        method: "POST", // HTTP method for the request.
+        credentials: "include", // Include cookies in the request.
+        headers: { "Content-Type": "application/json" }, // Set content type to JSON.
+        body: JSON.stringify({ email, password }), // Send email and password in the request body.
+      });
 
-  useEffect(() => {
-    const fetchMovie = async () => {
-      try {
-        const res = await fetch("https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/MovieTitles");
-        const data = await res.json();
-
-        const genreKeys = [
-          "action", "adventure", "anime_int_tv", "british_int_tv", "children", "comedies",
-          "comedy_drama_int", "comedy_int", "comedy_romance", "crime_tv", "documentaries",
-          "documentary_int", "docuseries", "dramas", "drama_int", "drama_romance", "family",
-          "fantasy", "horror", "thriller_int", "drama_romance_int_tv", "kids_tv", "language_tv",
-          "musicals", "nature_tv", "reality_tv", "spirituality", "action_tv", "comedy_tv",
-          "drama_tv", "talk_show_comedy_tv", "thrillers"
-        ];
-
-        const extractFirstGenre = (item: any): string => {
-          for (const key of genreKeys) {
-            if (item[key] === 1) return key;
-          }
-          return "Other";
-        };
-
-        const moviesWithSlugs: Movie[] = data.map((item: any) => {
-          const genre = extractFirstGenre(item);
-          return {
-            ...item,
-            slug: slugify(item.title),
-            genre,
-          };
-        });
-
-        setResults(moviesWithSlugs as MovieType[]);
-        setGenres(Array.from(new Set(moviesWithSlugs.map((m) => m.genre))).sort());
-
-
-        const matched = moviesWithSlugs.find((m) => m.slug === slug);
-        if (!matched) {
-          setMovie(null);
-          setLoading(false);
-          return;
-        }
-
-        setMovie(matched);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        const id = matched.show_id;
-
-        const userId = 11;
-        if (userId) {
-          fetch(`https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/ratings/${userId}/${id}`)
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-              if (data?.rating) {
-                setUserRating(data.rating);
-              }
-            })
-            .catch((err) => console.warn("Failed to fetch existing rating:", err));
-        }
-        // Fetch each rec source independently
-        fetch(`https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/content/${id}`)
-            .then(res => res.ok ? res.json() : [])
-          .then(setContentRecs)
-          .catch(e => console.warn("Content recs failed", e));
-
-        fetch(`https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/collab/${id}`)
-          .then(res => res.ok ? res.json() : [])
-          .then(setCollabRecs)
-          .catch(e => console.warn("Collab recs failed", e));                           
-
-        const genre = matched.genre?.toLowerCase() ?? "";
-
-        console.log("🎬 Matched movie:", matched);
-        console.log("📦 Detected genre:", matched.genre);
-
-        if (genre.includes("action")) {
-        fetch(`https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/action/${id}`)
-            .then(res => res.ok ? res.json() : [])
-            .then(setActionRecs)
-            .catch(e => console.warn("Action recs failed", e));
-        }
-        
-        if (genre.includes("comedies")) {
-        fetch(`https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/comedy/${id}`)
-            .then(res => res.ok ? res.json() : [])
-            .then(setComedyRecs)
-            .catch(e => console.warn("Comedy recs failed", e));
-        }
-        
-        if (genre.includes("drama")) {
-        fetch(`https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/drama/${id}`)
-            .then(res => res.ok ? res.json() : [])
-            .then(setDramaRecs)
-            .catch(e => console.warn("Drama recs failed", e));
-        }          
-      } catch (err) {
-        console.error("Movie fetch error:", err);
-        setMovie(null);
-      } finally {
-        setLoading(false);
+      // Parse the response JSON only if there is content.
+      let data = null;
+      const contentLength = response.headers.get("content-length");
+      if (contentLength && parseInt(contentLength, 10) > 0) {
+        data = await response.json(); // Parse the response JSON.
       }
-    };
 
-    fetchMovie();
-  }, [slug]);
+      // Handle unsuccessful responses.
+      if (!response.ok) {
+        throw new Error(data?.message || "Invalid email or password."); // Throw an error with the response message.
+      }
 
-    if (loading) return <Spinner size={60} color="#ffffff" centered />;
-    if (!movie) return <h2 style={{ color: "white" }}>Movie not found</h2>;
-
-  const posterUrl = getPosterPath(movie.title);
-
-  const renderRecs = (title: string, recs: string[]) => (
-    recs.length > 0 && (
-      <RecommendationSection>
-        <h2>{title}</h2>
-        <RecommendationScroll>
-          {recs.map((title, i) => (
-            <RecommendationCard key={i}>
-              <img
-                src={getPosterPath(title)}
-                alt={title}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/Movie Posters/fallback.jpg";
-                }}
-              />
-              <MovieOverlay className="overlay">
-                  <h4>{title}</h4>
-                  <button onClick={() => window.location.href = `/movie/${slugify(title)}`}>
-                      Go to Movie
-                  </button>
-              </MovieOverlay>
-            </RecommendationCard>
-          ))}
-        </RecommendationScroll>
-      </RecommendationSection>
-    )
-  );
-  
+      navigate("/browse"); // Navigate to the browse page on successful login.
+    } catch (error: any) {
+      setError(error.message || "Error logging in."); // Set error message if login fails.
+      console.error("Fetch attempt failed:", error); // Log the error to the console.
+    }
+  };
 
   return (
-    <Background $posterUrl={`"${posterUrl}"`}>
-      <Header
-          selectedGenre={selectedGenre}
-          setSelectedGenre={setSelectedGenre}
-          allMovies={results}
-          genres={genres}
-          formatGenreName={formatGenreName}
-      />
-      <Overlay>
-        <img
-          src={posterUrl}
-          alt={movie.title}
-          style={{
-            width: "220px",
-            borderRadius: "8px",
-            marginBottom: "2rem",
-            zIndex: 2,
-          }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = "/Movie Posters/fallback.jpg";
-          }}
-        />
+    <HeaderComponent
+      backgroundSrc="/bigback.png" // Background image for the header.
+      showSigninButton={false} // Hide the "Sign In" button in the header.
+    >
+      <LoginHeroContent>
+        {/* Page heading */}
+        <h1>Welcome Back</h1>
+        {/* Subheading */}
+        <h2>Please log in to continue</h2>
 
-        <InfoSection>
-          <Title>{movie.title}</Title>
-          <MetaCompact>
-            <span>{movie.rating}</span>
-            <span>{movie.duration}</span>
-            <span>{movie.release_year}</span>
-          </MetaCompact>
-          <WatchNowButton>
-            <PlayIcon /> Watch Now
-          </WatchNowButton>
+        {/* Login form */}
+        <FormWrapper onSubmit={handleSubmit}>
+          {/* Email input field */}
+          <StyledInput
+            type="email"
+            name="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={handleChange} // Update email state on input change.
+          />
+          {/* Password input field */}
+          <StyledInput
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={password}
+            onChange={handleChange} // Update password state on input change.
+          />
+          {/* "Remember me" checkbox */}
+          <CheckboxWrapper>
+            <input
+              type="checkbox"
+              id="rememberme"
+              name="rememberme"
+              checked={rememberme}
+              onChange={handleChange} // Update "remember me" state on checkbox change.
+            />
+            <label htmlFor="rememberme">Remember me</label>
+          </CheckboxWrapper>
+          {/* Display error message if present */}
+          {error && <ErrorText>{error}</ErrorText>}
 
-          <Description>{movie.description}</Description>
-          <Metadata>
-            <MetaItem><strong>Release Year:</strong> {movie.release_year}</MetaItem>
-            <MetaItem><strong>Rating:</strong> {movie.rating}</MetaItem>
-            <MetaItem><strong>Genre:</strong> {movie.genre}</MetaItem>
-            <MetaItem><strong>Duration:</strong> {movie.duration}</MetaItem>
-            <MetaItem><strong>Director:</strong> {movie.director}</MetaItem>
-            <MetaItem><strong>Country:</strong> {movie.country}</MetaItem>
-            <MetaItem><strong>Cast:</strong> {movie.cast}</MetaItem>
-          </Metadata>
-          <MetaItem style={{ marginTop: "2rem" }}>
-            <strong>Rate: {renderStars()}</strong>
-          </MetaItem>
-        </InfoSection>
+          {/* Submit button */}
+          <OptFormButton type="submit">
+            <span>Sign In</span>
+            <img src="/icons/chevron-right.png" alt="Sign In" />
+          </OptFormButton>
 
-        {renderRecs("More Like This", contentRecs)}
-        {renderRecs("More For You", collabRecs)}
-        {renderRecs("More Action For You", actionRecs)}
-        {renderRecs("More Comedy For You", comedyRecs)}
-        {renderRecs("More Drama For you", dramaRecs)}
-
-        <RatingTag>{movie.rating}</RatingTag>
-      </Overlay>
-    </Background>
+          {/* Link to the registration page */}
+          <RegisterText>
+            Don’t have an account?{" "}
+            <span onClick={handleRegisterClick}>Register here</span>
+          </RegisterText>
+        </FormWrapper>
+      </LoginHeroContent>
+    </HeaderComponent>
   );
-};
+}
 
-export default MoviePage;
+export default LoginPage; // Export the LoginPage component as the default export.
 
-const genreFields = [
-    "action",
-    "comedies",
-    "dramas",
-    "comedies dramas international movies",
-    "comedies Romantic Movies",
-    "dramas romantic movies",
-    "dramas international movies",
-    "tv dramas",
-    "tv comedies",
-    "tv action"
-  ];
+import styled from "styled-components"; // Importing styled-components for styling.
 
-const Background = styled.div<{ $posterUrl: string }>`
-  width: 100%;
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
+// Styled component for the login hero content section.
+const LoginHeroContent = styled.div`
+  max-width: 400px; // Maximum width of the content.
+  margin: 0 auto; // Center the content horizontally.
+  color: black; // Text color.
+  text-align: center; // Center-align the text.
 
-  &::before {
-    content: "";
-    background-image: url(${(props) => props.$posterUrl});
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    filter: brightness(0.3) blur(6px);
-    z-index: 0;
+  h1 {
+    font-size: 2.5rem; // Font size for the main heading.
+    font-weight: bold; // Bold font weight.
+    margin-bottom: 1rem; // Margin below the heading.
+  }
+
+  h2 {
+    font-size: 1.25rem; // Font size for the subheading.
+    font-weight: normal; // Normal font weight.
+    margin-bottom: 2rem; // Margin below the subheading.
   }
 `;
 
-const Overlay = styled.div`
-  position: relative;
-  z-index: 1;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 60%);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;   /* ⬅ content starts at the top */
-  padding: 6rem 2rem 6rem 2rem;
-  box-sizing: border-box;
-  color: white;
-  min-height: 100vh;
+// Styled component for the form wrapper.
+const FormWrapper = styled.form`
+  display: flex; // Use flexbox for layout.
+  flex-direction: column; // Stack items vertically.
+  gap: 16px; // Add spacing between form elements.
+  align-items: center; // Center-align items horizontally.
+  padding: 0 20px; // Horizontal padding.
 `;
 
-
-const InfoSection = styled.div`
-  max-width: 700px;
+// Styled component for the input fields.
+const StyledInput = styled.input`
+  width: 120%; // Width of the input field.
+  max-width: 400px; // Maximum width of the input field.
+  height: 50px; // Height of the input field.
+  padding: 0 15px; // Horizontal padding inside the input.
+  border-radius: 999px; // Fully rounded corners.
+  border: none; // Remove border.
+  font-size: 16px; // Font size of the input text.
+  outline: none; // Remove outline on focus.
 `;
 
-const Title = styled.h1`
-  font-size: 3rem;
-  margin: 0.2rem 0 1rem 0;
+// Styled component for the "Remember me" checkbox wrapper.
+const CheckboxWrapper = styled.label`
+  display: flex; // Use flexbox for layout.
+  align-items: center; // Center-align items vertically.
+  gap: 10px; // Add spacing between the checkbox and label.
+  font-size: 14px; // Font size of the label text.
+  color: black; // Text color.
+
+  input {
+    accent-color: #ffffff; // Checkbox accent color.
+  }
 `;
 
-const Description = styled.p`
-  font-size: 1.25rem;
-  line-height: 1.5;
-  margin-bottom: 1.5rem;
-  margin-top: 1.25rem;
+// Styled component for displaying error messages.
+const ErrorText = styled.p`
+  color: #ff4d4d; // Error text color.
+  margin: 0; // Remove margin.
+  font-size: 14px; // Font size of the error text.
+`;
+
+// Styled component for the registration link text.
+const RegisterText = styled.p`
+  margin-top: 20px; // Margin above the text.
+  font-size: 14px; // Font size of the text.
+  color: black; // Text color.
+
+  span {
+    color: rgb(98, 98, 98); // Link text color.
+    text-decoration: underline; // Underline the link text.
+    cursor: pointer; // Change cursor to pointer on hover.
+
+    &:hover {
+      color: #fff; // Change link text color on hover.
+    }
+  }
+`;
+
+// Styled component for the "Sign In" button.
+const OptFormButton = styled.button`
+  position: relative; // Position relative for child elements.
+  overflow: hidden; // Hide overflow content.
+  width: fit-content; // Adjust width to fit content.
+  height: 45px; // Height of the button.
+  background: #000; // Button background color.
+  color: white; // Button text color.
+  padding: 0 32px; // Horizontal padding inside the button.
+  border: none; // Remove border.
+  cursor: pointer; // Change cursor to pointer on hover.
+  display: flex; // Use flexbox for layout.
+  align-items: center; // Center-align items vertically.
+  border-radius: 999px; // Fully rounded corners.
+
+  img {
+    margin-left: 10px; // Margin to the left of the image.
+    filter: brightness(0) invert(1); // Invert image colors.
+    width: 14px; // Width of the image.
+    transition: filter 0.4s ease; // Smooth transition for filter changes.
+    position: relative; // Position relative for stacking.
+    z-index: 3; // Set stacking order.
+  }
+
+  span {
+    font-size: 16px; // Font size of the button text.
+    z-index: 3; // Set stacking order.
+    color: white; // Text color.
+    transition: color 0.4s ease; // Smooth transition for color changes.
+  }
+
+  &:hover img {
+    filter: none; // Remove filter on hover.
+  }
+
+  @media (max-width: 950px) {
+    span {
+      font-size: 14px; // Adjust font size for smaller screens.
+    }
+  }
 `;
 
 const Metadata = styled.div`
