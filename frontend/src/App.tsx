@@ -12,6 +12,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import FooterComponent from "./components/FooterComponent";
 import ScrollToTop from "./components/ScrollToTop";
 import MoviePageWrapper from "./components/MoviePageWrapper";
+import Enable2FA from "./pages/Enable2FAPage";
 
 if ("scrollRestoration" in window.history) {
   window.history.scrollRestoration = "manual";
@@ -30,6 +31,7 @@ const App: React.FC = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/browse" element={<BrowsePage />} />
           <Route path="/movie/:slug" element={<MoviePageWrapper />} />
+          <Route path="/enable-2fa" element={<Enable2FA />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/search" element={<SearchResults />} />
         </Routes>

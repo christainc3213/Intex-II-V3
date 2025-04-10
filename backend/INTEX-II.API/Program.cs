@@ -68,6 +68,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender<IdentityUser>>();
 
+builder.Services.AddScoped<MfaService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
