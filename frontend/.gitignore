@@ -25,3 +25,4 @@ Movie Posters
 *.njsproj
 *.sln
 *.sw?
+.env*
