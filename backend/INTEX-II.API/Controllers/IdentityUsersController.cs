@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Authorization; // Duplicate import, can be removed if
 
 [ApiController] // Indicates that this class is an API controller.
 [Route("[controller]")] // Specifies the route template for this controller.
-[Authorize(Roles = "Administrator")] // Restricts access to users with the "Administrator" role.
-// public class UserController : ControllerBase // Commented out class declaration, possibly for debugging or refactoring.
+// [Authorize(Roles = "Administrator")] // Restricts access to users with the "Administrator" role.
+public class UserController : ControllerBase // Commented out class declaration, possibly for debugging or refactoring.
 {
     private readonly UserManager<IdentityUser> _userManager; // Dependency injection for managing identity users.
 

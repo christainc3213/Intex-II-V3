@@ -76,7 +76,7 @@ function Register() {
     try {
       // Send registration request to the backend
       const registerResponse = await fetch(
-        "https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/register",
+        "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/register",
         {
           method: "POST",
           headers: {
@@ -96,7 +96,7 @@ function Register() {
 
       // Automatically log in the user after successful registration
       const loginUrl =
-        "https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/login?useCookies=true";
+        "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useCookies=true";
       const loginResponse = await fetch(loginUrl, {
         method: "POST",
         headers: {
