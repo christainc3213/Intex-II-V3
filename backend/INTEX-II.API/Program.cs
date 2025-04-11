@@ -32,6 +32,8 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 12;
     options.Password.RequiredUniqueChars = 1;
+
+    options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider; // Enable email token provider
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
@@ -66,7 +68,10 @@ builder.Services.AddCors(options =>
         });
 });
 
-builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender<IdentityUser>>();
+builder.Services.AddSingleton<IEmailSender<IdentityUser>, CustomEmailSender<IdentityUser>>();
+
+builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender>(
+    sp => sp.GetRequiredService<IEmailSender<IdentityUser>>());
 
 var app = builder.Build();
 
@@ -115,5 +120,55 @@ app.MapGet("/pingauth", (HttpContext context, ClaimsPrincipal user) =>
 
     return Results.Json(new { email = email });
 });
+
+// Endpoint to send MFA code via email
+app.MapPost("/send-mfa-code", async (HttpContext context, UserManager<IdentityUser> userManager, IEmailSender<IdentityUser> emailSender) =>
+{
+    var user = await userManager.GetUserAsync(context.User);
+    if (user == null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // Generate a token for MFA
+    var token = await userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+
+    // Send the token via email
+    await emailSender.SendEmailAsync(user, "Your MFA Code", $"Your MFA code is: {token}");
+
+    return Results.Ok(new { message = "MFA code sent to your email." });
+}).RequireAuthorization();
+
+// Endpoint to verify MFA code
+app.MapPost("/verify-mfa-code", async (HttpContext context, UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager) =>
+{
+    var user = await userManager.GetUserAsync(context.User);
+    if (user == null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // Read the MFA code from the request body
+    var requestBody = await context.Request.ReadFromJsonAsync<MfaVerificationRequest>();
+    if (requestBody == null || string.IsNullOrEmpty(requestBody.Code))
+    {
+        return Results.BadRequest(new { message = "Invalid MFA code." });
+    }
+
+    // Verify the MFA code
+    var isValid = await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, requestBody.Code);
+    if (!isValid)
+    {
+        return Results.Unauthorized(new { message = "Invalid MFA code." });
+    }
+
+    // Sign in the user after successful MFA verification
+    await signInManager.SignInAsync(user, isPersistent: true);
+
+    return Results.Ok(new { message = "MFA verification successful." });
+}).RequireAuthorization();
+
+// Record to handle MFA verification request
+public record MfaVerificationRequest(string Code);
 
 app.Run();

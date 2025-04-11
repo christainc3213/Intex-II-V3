@@ -7,10 +7,18 @@ function LoginPage() {
   const [email, setEmail] = useState<string>(""); // State to store the user's email input.
   const [password, setPassword] = useState<string>(""); // State to store the user's password input.
   const [rememberme, setRememberme] = useState<boolean>(false); // State to track the "remember me" checkbox.
+  const [mfaRequired, setMfaRequired] = useState(false); // State to track if MFA is required
+  const [mfaCode, setMfaCode] = useState(""); // State to store the MFA code input
+  const [mfaError, setMfaError] = useState(""); // State to store MFA-related errors
+  const [loading, setLoading] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(false);
+
 
   // State variable for error messages.
   const [error, setError] = useState<string>(""); // State to store error messages.
   const navigate = useNavigate(); // Hook for programmatic navigation.
+
+
 
   // Handle change events for input fields.
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,45 +39,111 @@ function LoginPage() {
 
   // Handle submit event for the login form.
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Prevent default form submission behavior.
-    setError(""); // Clear any previous error messages.
-
-    // Validate that both email and password fields are filled.
+    e.preventDefault(); // Prevent default form submission behavior
+    setError(""); // Clear any previous error messages
+    setMfaError(""); // Clear any previous MFA error messages
+  
     if (!email || !password) {
-      setError("Please fill in all fields."); // Set error message if fields are empty.
+      setError("Please fill in all fields."); // Set error message if fields are empty
       return;
     }
-
-    // Determine the login URL based on the "remember me" checkbox state.
+  
     const loginUrl = rememberme
       ? "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useCookies=true"
       : "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useSessionCookies=true";
+  
+      setLoading(true); // Start loading
+      let data;
+      try {
+        const response = await fetch(loginUrl, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+      
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error("Unexpected server error.");
+        }
+      
+        if (!response.ok) {
+          if (data?.mfaRequired) {
+            setMfaRequired(true);
+            return;
+          }
+          throw new Error(data?.message || "Invalid email or password.");
+        }
+      
+        navigate("/browse");
+      } catch (error: any) {
+        setError(error.message || "Error logging in.");
+        console.error("Fetch attempt failed:", error);
+      } finally {
+        setLoading(false); // Stop loading
+      }
+  };      
+
+  const handleVerifyMfaCode = async () => {
+    setMfaError(""); // Clear any previous MFA error messages
+  
+    if (!mfaCode) {
+      setMfaError("Please enter the MFA code."); // Set error message if the MFA code is empty
+      return;
+    }
+  
+    setMfaLoading(true);
+    setMfaError("");
 
     try {
-      // Send a POST request to the login endpoint.
-      const response = await fetch(loginUrl, {
-        method: "POST", // HTTP method for the request.
-        credentials: "include", // Include cookies in the request.
-        headers: { "Content-Type": "application/json" }, // Set content type to JSON.
-        body: JSON.stringify({ email, password }), // Send email and password in the request body.
+      const response = await fetch("https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/verify-mfa-code", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: mfaCode }),
       });
 
-      // Parse the response JSON only if there is content.
-      let data = null;
-      const contentLength = response.headers.get("content-length");
-      if (contentLength && parseInt(contentLength, 10) > 0) {
-        data = await response.json(); // Parse the response JSON.
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Unexpected server error.");
       }
 
-      // Handle unsuccessful responses.
       if (!response.ok) {
-        throw new Error(data?.message || "Invalid email or password."); // Throw an error with the response message.
+        if (response.status === 401) {
+          setMfaError("Session expired. Please log in again.");
+          setMfaRequired(false);
+          return;
+        }
+        throw new Error(data?.message || "Invalid MFA code.");
       }
 
-      navigate("/browse"); // Navigate to the browse page on successful login.
+      navigate("/browse");
     } catch (error: any) {
-      setError(error.message || "Error logging in."); // Set error message if login fails.
-      console.error("Fetch attempt failed:", error); // Log the error to the console.
+      setMfaError(error.message || "Error verifying MFA code.");
+      console.error("MFA verification failed:", error);
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleResendMfaCode = async () => {
+    try {
+      const response = await fetch("https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/send-mfa-code", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to resend MFA code.");
+      }
+  
+      alert("MFA code resent to your email.");
+    } catch (error) {
+      console.error("Error resending MFA code:", error);
     }
   };
 
@@ -85,49 +159,63 @@ function LoginPage() {
         <h2>Please log in to continue</h2>
 
         {/* Login form */}
-        <FormWrapper onSubmit={handleSubmit}>
-          {/* Email input field */}
-          <StyledInput
-            type="email"
-            name="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={handleChange} // Update email state on input change.
-          />
-          {/* Password input field */}
-          <StyledInput
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={password}
-            onChange={handleChange} // Update password state on input change.
-          />
-          {/* "Remember me" checkbox */}
-          <CheckboxWrapper>
-            <input
-              type="checkbox"
-              id="rememberme"
-              name="rememberme"
-              checked={rememberme}
-              onChange={handleChange} // Update "remember me" state on checkbox change.
+        {mfaRequired ? (
+          <MFAWrapper>
+            <h2>Enter MFA Code</h2>
+            <StyledInput
+                type="text"
+                placeholder="MFA Code"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                disabled={mfaLoading}
+              />
+            {mfaError && <ErrorText>{mfaError}</ErrorText>} {/* Display MFA error message */}
+            <OptFormButton type="button" onClick={handleVerifyMfaCode} disabled={mfaLoading}>
+              <span>{mfaLoading ? "Verifying..." : "Verify Code"}</span>
+              {!mfaLoading && <img src="/icons/chevron-right.png" alt="Verify Code" />}
+            </OptFormButton>
+            <ResendButton type="button" onClick={handleResendMfaCode}>
+              <span>Resend Code</span>
+            </ResendButton>
+          </MFAWrapper>
+        ) : (
+          <FormWrapper onSubmit={handleSubmit}>
+            {/* login form */}
+            <StyledInput
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={handleChange}
             />
-            <label htmlFor="rememberme">Remember me</label>
-          </CheckboxWrapper>
-          {/* Display error message if present */}
-          {error && <ErrorText>{error}</ErrorText>}
-
-          {/* Submit button */}
-          <OptFormButton type="submit">
-            <span>Sign In</span>
-            <img src="/icons/chevron-right.png" alt="Sign In" />
-          </OptFormButton>
-
-          {/* Link to the registration page */}
-          <RegisterText>
-            Don’t have an account?{" "}
-            <span onClick={handleRegisterClick}>Register here</span>
-          </RegisterText>
-        </FormWrapper>
+            <StyledInput
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={password}
+              onChange={handleChange}
+            />
+            <CheckboxWrapper>
+              <input
+                type="checkbox"
+                id="rememberme"
+                name="rememberme"
+                checked={rememberme}
+                onChange={handleChange}
+              />
+              <label htmlFor="rememberme">Remember me</label>
+            </CheckboxWrapper>
+            {error && <ErrorText>{error}</ErrorText>}
+            <OptFormButton type="submit" disabled={loading}>
+              <span>{loading ? "Signing In..." : "Sign In"}</span>
+              {!loading && <img src="/icons/chevron-right.png" alt="Sign In" />}
+            </OptFormButton>
+            <RegisterText>
+              Don’t have an account?{" "}
+              <span onClick={handleRegisterClick}>Register here</span>
+            </RegisterText>
+          </FormWrapper>
+        )}
       </LoginHeroContent>
     </HeaderComponent>
   );
@@ -168,7 +256,7 @@ const FormWrapper = styled.form`
 
 // Styled component for the input fields.
 const StyledInput = styled.input`
-  width: 120%; // Width of the input field.
+  width: 100%; // Width of the input field.
   max-width: 400px; // Maximum width of the input field.
   height: 50px; // Height of the input field.
   padding: 0 15px; // Horizontal padding inside the input.
@@ -255,4 +343,26 @@ const OptFormButton = styled.button`
       font-size: 14px; // Adjust font size for smaller screens.
     }
   }
+`;
+
+const ResendButton = styled.button`
+  background: none; // Transparent background
+  border: none; // No border
+  color: #007bff; // Blue text color
+  font-size: 14px; // Font size
+  cursor: pointer; // Pointer cursor on hover
+  margin-top: 10px; // Add spacing above the button
+  text-decoration: underline; // Underline text
+
+  &:hover {
+    color: #0056b3; // Darker blue on hover
+  }
+`;
+
+const MFAWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  padding: 0 20px;
 `;
