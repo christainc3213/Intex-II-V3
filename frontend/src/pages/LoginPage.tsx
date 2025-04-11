@@ -39,8 +39,8 @@ function LoginPage() {
     }
 
     const loginUrl = rememberme
-      ? "https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/login?useCookies=true"
-      : "https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/login?useSessionCookies=true";
+      ? "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useCookies=true"
+      : "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/login?useSessionCookies=true";
 
     try {
       const response = await fetch(loginUrl, {
@@ -69,8 +69,7 @@ function LoginPage() {
   };
 
   return (
-    <HeaderComponent backgroundSrc="/bigback.png"
-                     showSigninButton={false}>
+    <HeaderComponent backgroundSrc="/bigback.png" showSigninButton={false}>
       {/* <LoginBox> */}
       <LoginHeroContent>
         <h1>Welcome Back</h1>

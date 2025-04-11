@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Spinner from "../components/Spinner";
 import Header from "../pages/BrowseParts/Header";
-import {MovieType} from "../types/MovieType"; // adjust path if needed
-
+import { MovieType } from "../types/MovieType"; // adjust path if needed
 
 interface Movie {
   show_id: string;
@@ -46,12 +45,10 @@ const MoviePage = () => {
     };
   }, []);
 
-
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRating, setUserRating] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
-
 
   // Separate states for each rec source
   const [contentRecs, setContentRecs] = useState<string[]>([]);
@@ -65,32 +62,38 @@ const MoviePage = () => {
   const [genres, setGenres] = useState<string[]>([]);
 
   const formatGenreName = (key: string): string =>
-      key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()).replace(/\bTv\b/i, "TV");
+    key
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+      .replace(/\bTv\b/i, "TV");
 
   const handleStarClick = async (rating: number) => {
     if (!movie) return;
-  
+
     const userId = 11;
     if (!userId) {
       alert("You must be logged in to rate movies.");
       return;
     }
-  
+
     setUserRating(rating);
-  
+
     try {
-      const res = await fetch("https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/api/ratings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          show_id: movie.show_id,
-          rating: rating,
-        }),
-      });
-  
+      const res = await fetch(
+        "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/ratings",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            show_id: movie.show_id,
+            rating: rating,
+          }),
+        }
+      );
+
       if (!res.ok) {
         console.error("Failed to submit rating");
       }
@@ -98,13 +101,13 @@ const MoviePage = () => {
       console.error("Rating submit error:", err);
     }
   };
-  
+
   const renderStars = () => {
     const stars = [];
-  
+
     for (let i = 1; i <= 5; i++) {
       const filled = hoverRating ? i <= hoverRating : i <= (userRating ?? 0);
-  
+
       stars.push(
         <Star
           key={i}
@@ -117,12 +120,15 @@ const MoviePage = () => {
         </Star>
       );
     }
-  
+
     return <StarsContainer>{stars}</StarsContainer>;
-  };    
+  };
 
   const slugify = (str: string) =>
-    str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    str
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
   const getPosterPath = (title: string): string => {
     if (!title) return "/Movie Posters/fallback.jpg";
@@ -130,21 +136,49 @@ const MoviePage = () => {
       .replace(/[^\w\s]/g, "")
       .replace(/\s+/g, " ")
       .trim()}.jpg`;
-  }; 
+  };
 
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        const res = await fetch("https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/MovieTitles");
+        const res = await fetch(
+          "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/MovieTitles"
+        );
         const data = await res.json();
 
         const genreKeys = [
-          "action", "adventure", "anime_int_tv", "british_int_tv", "children", "comedies",
-          "comedy_drama_int", "comedy_int", "comedy_romance", "crime_tv", "documentaries",
-          "documentary_int", "docuseries", "dramas", "drama_int", "drama_romance", "family",
-          "fantasy", "horror", "thriller_int", "drama_romance_int_tv", "kids_tv", "language_tv",
-          "musicals", "nature_tv", "reality_tv", "spirituality", "action_tv", "comedy_tv",
-          "drama_tv", "talk_show_comedy_tv", "thrillers"
+          "action",
+          "adventure",
+          "anime_int_tv",
+          "british_int_tv",
+          "children",
+          "comedies",
+          "comedy_drama_int",
+          "comedy_int",
+          "comedy_romance",
+          "crime_tv",
+          "documentaries",
+          "documentary_int",
+          "docuseries",
+          "dramas",
+          "drama_int",
+          "drama_romance",
+          "family",
+          "fantasy",
+          "horror",
+          "thriller_int",
+          "drama_romance_int_tv",
+          "kids_tv",
+          "language_tv",
+          "musicals",
+          "nature_tv",
+          "reality_tv",
+          "spirituality",
+          "action_tv",
+          "comedy_tv",
+          "drama_tv",
+          "talk_show_comedy_tv",
+          "thrillers",
         ];
 
         const extractFirstGenre = (item: any): string => {
@@ -164,8 +198,9 @@ const MoviePage = () => {
         });
 
         setResults(moviesWithSlugs as MovieType[]);
-        setGenres(Array.from(new Set(moviesWithSlugs.map((m) => m.genre))).sort());
-
+        setGenres(
+          Array.from(new Set(moviesWithSlugs.map((m) => m.genre))).sort()
+        );
 
         const matched = moviesWithSlugs.find((m) => m.slug === slug);
         if (!matched) {
@@ -180,25 +215,33 @@ const MoviePage = () => {
 
         const userId = 11;
         if (userId) {
-          fetch(`https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/api/ratings/${userId}/${id}`)
+          fetch(
+            `https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/ratings/${userId}/${id}`
+          )
             .then((res) => (res.ok ? res.json() : null))
             .then((data) => {
               if (data?.rating) {
                 setUserRating(data.rating);
               }
             })
-            .catch((err) => console.warn("Failed to fetch existing rating:", err));
+            .catch((err) =>
+              console.warn("Failed to fetch existing rating:", err)
+            );
         }
         // Fetch each rec source independently
-        fetch(`https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/api/DetailsRecommendation/content/${id}`)
-            .then(res => res.ok ? res.json() : [])
+        fetch(
+          `https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/content/${id}`
+        )
+          .then((res) => (res.ok ? res.json() : []))
           .then(setContentRecs)
-          .catch(e => console.warn("Content recs failed", e));
+          .catch((e) => console.warn("Content recs failed", e));
 
-        fetch(`https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/api/DetailsRecommendation/collab/${id}`)
-          .then(res => res.ok ? res.json() : [])
+        fetch(
+          `https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/collab/${id}`
+        )
+          .then((res) => (res.ok ? res.json() : []))
           .then(setCollabRecs)
-          .catch(e => console.warn("Collab recs failed", e));                           
+          .catch((e) => console.warn("Collab recs failed", e));
 
         const genre = matched.genre?.toLowerCase() ?? "";
 
@@ -206,25 +249,31 @@ const MoviePage = () => {
         console.log("📦 Detected genre:", matched.genre);
 
         if (genre.includes("action")) {
-        fetch(`https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/api/DetailsRecommendation/action/${id}`)
-            .then(res => res.ok ? res.json() : [])
+          fetch(
+            `https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/action/${id}`
+          )
+            .then((res) => (res.ok ? res.json() : []))
             .then(setActionRecs)
-            .catch(e => console.warn("Action recs failed", e));
+            .catch((e) => console.warn("Action recs failed", e));
         }
-        
+
         if (genre.includes("comedies")) {
-        fetch(`https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/api/DetailsRecommendation/comedy/${id}`)
-            .then(res => res.ok ? res.json() : [])
+          fetch(
+            `https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/comedy/${id}`
+          )
+            .then((res) => (res.ok ? res.json() : []))
             .then(setComedyRecs)
-            .catch(e => console.warn("Comedy recs failed", e));
+            .catch((e) => console.warn("Comedy recs failed", e));
         }
-        
+
         if (genre.includes("drama")) {
-        fetch(`https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/api/DetailsRecommendation/drama/${id}`)
-            .then(res => res.ok ? res.json() : [])
+          fetch(
+            `https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/api/DetailsRecommendation/drama/${id}`
+          )
+            .then((res) => (res.ok ? res.json() : []))
             .then(setDramaRecs)
-            .catch(e => console.warn("Drama recs failed", e));
-        }          
+            .catch((e) => console.warn("Drama recs failed", e));
+        }
       } catch (err) {
         console.error("Movie fetch error:", err);
         setMovie(null);
@@ -236,12 +285,12 @@ const MoviePage = () => {
     fetchMovie();
   }, [slug]);
 
-    if (loading) return <Spinner size={60} color="#ffffff" centered />;
-    if (!movie) return <h2 style={{ color: "white" }}>Movie not found</h2>;
+  if (loading) return <Spinner size={60} color="#ffffff" centered />;
+  if (!movie) return <h2 style={{ color: "white" }}>Movie not found</h2>;
 
   const posterUrl = getPosterPath(movie.title);
 
-  const renderRecs = (title: string, recs: string[]) => (
+  const renderRecs = (title: string, recs: string[]) =>
     recs.length > 0 && (
       <RecommendationSection>
         <h2>{title}</h2>
@@ -252,31 +301,34 @@ const MoviePage = () => {
                 src={getPosterPath(title)}
                 alt={title}
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/Movie Posters/fallback.jpg";
+                  (e.currentTarget as HTMLImageElement).src =
+                    "/Movie Posters/fallback.jpg";
                 }}
               />
               <MovieOverlay className="overlay">
-                  <h4>{title}</h4>
-                  <button onClick={() => window.location.href = `/movie/${slugify(title)}`}>
-                      Go to Movie
-                  </button>
+                <h4>{title}</h4>
+                <button
+                  onClick={() =>
+                    (window.location.href = `/movie/${slugify(title)}`)
+                  }
+                >
+                  Go to Movie
+                </button>
               </MovieOverlay>
             </RecommendationCard>
           ))}
         </RecommendationScroll>
       </RecommendationSection>
-    )
-  );
-  
+    );
 
   return (
     <Background $posterUrl={`"${posterUrl}"`}>
       <Header
-          selectedGenre={selectedGenre}
-          setSelectedGenre={setSelectedGenre}
-          allMovies={results}
-          genres={genres}
-          formatGenreName={formatGenreName}
+        selectedGenre={selectedGenre}
+        setSelectedGenre={setSelectedGenre}
+        allMovies={results}
+        genres={genres}
+        formatGenreName={formatGenreName}
       />
       <Overlay>
         <img
@@ -289,7 +341,8 @@ const MoviePage = () => {
             zIndex: 2,
           }}
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = "/Movie Posters/fallback.jpg";
+            (e.currentTarget as HTMLImageElement).src =
+              "/Movie Posters/fallback.jpg";
           }}
         />
 
@@ -306,13 +359,27 @@ const MoviePage = () => {
 
           <Description>{movie.description}</Description>
           <Metadata>
-            <MetaItem><strong>Release Year:</strong> {movie.release_year}</MetaItem>
-            <MetaItem><strong>Rating:</strong> {movie.rating}</MetaItem>
-            <MetaItem><strong>Genre:</strong> {movie.genre}</MetaItem>
-            <MetaItem><strong>Duration:</strong> {movie.duration}</MetaItem>
-            <MetaItem><strong>Director:</strong> {movie.director}</MetaItem>
-            <MetaItem><strong>Country:</strong> {movie.country}</MetaItem>
-            <MetaItem><strong>Cast:</strong> {movie.cast}</MetaItem>
+            <MetaItem>
+              <strong>Release Year:</strong> {movie.release_year}
+            </MetaItem>
+            <MetaItem>
+              <strong>Rating:</strong> {movie.rating}
+            </MetaItem>
+            <MetaItem>
+              <strong>Genre:</strong> {movie.genre}
+            </MetaItem>
+            <MetaItem>
+              <strong>Duration:</strong> {movie.duration}
+            </MetaItem>
+            <MetaItem>
+              <strong>Director:</strong> {movie.director}
+            </MetaItem>
+            <MetaItem>
+              <strong>Country:</strong> {movie.country}
+            </MetaItem>
+            <MetaItem>
+              <strong>Cast:</strong> {movie.cast}
+            </MetaItem>
           </Metadata>
           <MetaItem style={{ marginTop: "2rem" }}>
             <strong>Rate: {renderStars()}</strong>
@@ -334,17 +401,17 @@ const MoviePage = () => {
 export default MoviePage;
 
 const genreFields = [
-    "action",
-    "comedies",
-    "dramas",
-    "comedies dramas international movies",
-    "comedies Romantic Movies",
-    "dramas romantic movies",
-    "dramas international movies",
-    "tv dramas",
-    "tv comedies",
-    "tv action"
-  ];
+  "action",
+  "comedies",
+  "dramas",
+  "comedies dramas international movies",
+  "comedies Romantic Movies",
+  "dramas romantic movies",
+  "dramas international movies",
+  "tv dramas",
+  "tv comedies",
+  "tv action",
+];
 
 const Background = styled.div<{ $posterUrl: string }>`
   width: 100%;
@@ -374,13 +441,12 @@ const Overlay = styled.div`
   background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 60%);
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;   /* ⬅ content starts at the top */
+  justify-content: flex-start; /* ⬅ content starts at the top */
   padding: 6rem 2rem 6rem 2rem;
   box-sizing: border-box;
   color: white;
   min-height: 100vh;
 `;
-
 
 const InfoSection = styled.div`
   max-width: 700px;
@@ -487,7 +553,9 @@ const Star = styled.span<{ $filled: boolean }>`
   font-size: 1.5rem;
   color: ${(props) => (props.$filled ? "#FFD700" : "#666")};
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 
   &:hover {
     transform: scale(1.2);
@@ -535,7 +603,6 @@ const MovieOverlay = styled.div`
   }
 `;
 
-
 const MetaCompact = styled.div`
   display: flex;
   gap: 1rem;
@@ -556,7 +623,9 @@ const WatchNowButton = styled.button`
   align-items: center;
   gap: 0.6rem;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
 
   &:hover {
     background-color: #d6d6d6;
@@ -572,7 +641,3 @@ const PlayIcon = styled.span`
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
 `;
-
-
-
-

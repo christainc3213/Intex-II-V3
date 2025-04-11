@@ -13,7 +13,7 @@ const AdminAuthorizeView: React.FC<AdminAuthorizeProps> = ({ children }) => {
     const checkAdminStatus = async () => {
       try {
         const response = await fetch(
-          "https://cineniche-3-9-f4dje0g7fgfhdafk.eastus-01.azurewebsites.net/user/info",
+          "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net/user/info",
           {
             method: "GET",
             credentials: "include",

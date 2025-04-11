@@ -13,7 +13,7 @@ export default defineConfig({
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com data:; " +
         "img-src 'self' data:; " +
-        "connect-src 'self' https://localhost:5001; " +
+        "connect-src 'self' https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net;  " +
         "frame-src 'self'; " +
         "object-src 'none'; " +
         "base-uri 'self'; " +
@@ -21,7 +21,8 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "https://localhost:5001",
+        target:
+          "https://cineniche3-9-dfbefvebc2gthdfd.eastus-01.azurewebsites.net",
         changeOrigin: true,
         secure: false, // allows self-signed certificates
       },
