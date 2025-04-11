@@ -4,6 +4,9 @@ using INTEX_II.API.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+public record LoginRequest(string Email, string Password);
+public record MfaVerificationRequest(string Code);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -123,9 +126,6 @@ app.MapPost("/login", async (HttpContext context, SignInManager<IdentityUser> si
     return Results.Ok(new { requires2FA = false });
 });
 
-// DTO for login
-public record LoginRequest(string Email, string Password);
-
 app.MapPost("/logout", async (HttpContext context, SignInManager<IdentityUser> signInManager) =>
 {
     await signInManager.SignOutAsync();
@@ -203,8 +203,5 @@ app.MapPost("/verify-mfa-code", async (HttpContext context, UserManager<Identity
 
     return Results.Ok(new { message = "MFA verification successful." });
 }).RequireAuthorization();
-
-// Record to handle MFA verification request
-public record MfaVerificationRequest(string Code);
 
 app.Run();
