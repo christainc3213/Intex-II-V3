@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 public class CustomEmailSender<TUser> : IEmailSender<TUser> where TUser : class
 {
-    private readonly string _smtpHost = private readonly string _smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST") ?? "smtp.gmail.com";
+    private readonly string _smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST") ?? "smtp.gmail.com";
     private readonly int _smtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? 587);
     private readonly string _smtpUser = Environment.GetEnvironmentVariable("SMTP_USER") ?? "nichecine@gmail.com";
     private readonly string _smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS") ?? "cuqo loar qgqf byxx"; // Your Gmail app-specific password

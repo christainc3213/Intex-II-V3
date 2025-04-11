@@ -90,6 +90,42 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapIdentityApi<IdentityUser>();
 
+app.MapPost("/login", async (HttpContext context, SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager) =>
+{
+    var loginRequest = await context.Request.ReadFromJsonAsync<LoginRequest>();
+    if (loginRequest is null)
+        return Results.BadRequest();
+
+    var user = await userManager.FindByEmailAsync(loginRequest.Email);
+    if (user == null)
+        return Results.Unauthorized();
+
+    // Check if the password is correct
+    var result = await signInManager.CheckPasswordSignInAsync(user, loginRequest.Password, lockoutOnFailure: true);
+    if (!result.Succeeded)
+        return Results.Unauthorized();
+
+    if (result.RequiresTwoFactor)
+    {
+        // Store user ID or a claim to track MFA stage
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id)
+        };
+
+        var identity = new ClaimsIdentity(claims, "TemporaryMfa");
+        await context.SignInAsync("TemporaryMfaScheme", new ClaimsPrincipal(identity));
+
+        return Results.Ok(new { requires2FA = true });
+    }
+
+    await signInManager.SignInAsync(user, isPersistent: true);
+    return Results.Ok(new { requires2FA = false });
+});
+
+// DTO for login
+public record LoginRequest(string Email, string Password);
+
 app.MapPost("/logout", async (HttpContext context, SignInManager<IdentityUser> signInManager) =>
 {
     await signInManager.SignOutAsync();
