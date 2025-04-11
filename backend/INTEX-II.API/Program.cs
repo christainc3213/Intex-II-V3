@@ -68,7 +68,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender<IdentityUser>>();
 
-builder.Services.AddScoped<MfaService>();
+
+builder.Services.AddSession();
 
 var app = builder.Build();
 
@@ -83,6 +84,8 @@ app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
+
 
 app.MapControllers();
 app.MapIdentityApi<IdentityUser>();
